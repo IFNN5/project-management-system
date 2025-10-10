@@ -18,6 +18,10 @@ class User(db.Model):
     password = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(50), nullable=False)
     department = db.Column(db.String(100))
+    full_name = db.Column(db.String(200))
+    email = db.Column(db.String(200))
+    phone = db.Column(db.String(50))
+    is_active = db.Column(db.Boolean, default=True)
 
 class Project(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -42,15 +46,28 @@ class Task(db.Model):
     assigned_to = db.Column(db.Integer, db.ForeignKey('user.id'))
     status = db.Column(db.String(50), default='not_started')
     progress_percent = db.Column(db.Integer, default=0)
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class PurchaseRequest(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     project_id = db.Column(db.Integer, db.ForeignKey('project.id'))
     requested_by = db.Column(db.Integer, db.ForeignKey('user.id'))
+    supplier_id = db.Column(db.Integer, db.ForeignKey('supplier.id'), nullable=True)
     description = db.Column(db.Text)
     estimated_cost = db.Column(db.Float)
     status = db.Column(db.String(50), default='pending')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Supplier(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False)
+    contact_person = db.Column(db.String(200))
+    email = db.Column(db.String(200))
+    phone = db.Column(db.String(50))
+    address = db.Column(db.Text)
+    is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Invoice(db.Model):
@@ -62,22 +79,28 @@ class Invoice(db.Model):
     created_by = db.Column(db.Integer, db.ForeignKey('user.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-# Initialize database and create users
+class Comment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    comment_text = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# Initialize database
 def init_db():
     with app.app_context():
         db.create_all()
         
-        # Check if users exist
         if User.query.count() == 0:
             users = [
-                User(username='master', password=generate_password_hash('admin123'), role='master', department='الإدارة العامة'),
-                User(username='sales', password=generate_password_hash('sales123'), role='sales', department='المبيعات'),
-                User(username='manager', password=generate_password_hash('manager123'), role='management', department='الإدارة العليا'),
-                User(username='projects', password=generate_password_hash('projects123'), role='projects', department='إدارة المشاريع'),
-                User(username='operations', password=generate_password_hash('operations123'), role='operations', department='التشغيل'),
-                User(username='procurement', password=generate_password_hash('procurement123'), role='procurement', department='المشتريات'),
-                User(username='finance', password=generate_password_hash('finance123'), role='finance', department='المالية'),
-                User(username='hr', password=generate_password_hash('hr123'), role='hr', department='الموارد البشرية'),
+                User(username='master', password=generate_password_hash('admin123'), role='master', department='الإدارة العامة', full_name='المدير العام'),
+                User(username='sales', password=generate_password_hash('sales123'), role='sales', department='المبيعات', full_name='موظف المبيعات'),
+                User(username='manager', password=generate_password_hash('manager123'), role='management', department='الإدارة العليا', full_name='المدير التنفيذي'),
+                User(username='projects', password=generate_password_hash('projects123'), role='projects', department='إدارة المشاريع', full_name='مدير المشاريع'),
+                User(username='operations', password=generate_password_hash('operations123'), role='operations', department='التشغيل', full_name='مدير التشغيل'),
+                User(username='procurement', password=generate_password_hash('procurement123'), role='procurement', department='المشتريات', full_name='مدير المشتريات'),
+                User(username='finance', password=generate_password_hash('finance123'), role='finance', department='المالية', full_name='المدير المالي'),
+                User(username='hr', password=generate_password_hash('hr123'), role='hr', department='الموارد البشرية', full_name='مدير الموارد البشرية'),
             ]
             db.session.add_all(users)
             db.session.commit()
@@ -124,13 +147,11 @@ def dashboard():
     role = session.get('role')
     user_id = session.get('user_id')
     
-    # Get statistics
     total_projects = Project.query.count()
     pending_projects = Project.query.filter_by(status='pending_approval').count()
     in_progress = Project.query.filter_by(status='in_progress').count()
     completed = Project.query.filter_by(status='completed').count()
     
-    # Get projects based on role
     if role == 'master':
         projects = Project.query.order_by(Project.created_at.desc()).all()
     elif role == 'sales':
@@ -140,7 +161,6 @@ def dashboard():
     else:
         projects = Project.query.filter(Project.status.in_(['approved', 'in_progress', 'completed', 'on_hold'])).order_by(Project.created_at.desc()).all()
     
-    # Get purchase requests for procurement
     purchase_requests = []
     if role in ['procurement', 'master', 'operations']:
         if role == 'operations':
@@ -148,7 +168,6 @@ def dashboard():
         else:
             purchase_requests = PurchaseRequest.query.all()
     
-    # Get invoices for finance
     invoices = []
     if role in ['finance', 'master']:
         invoices = Invoice.query.all()
@@ -191,6 +210,48 @@ def add_project():
         return redirect(url_for('dashboard'))
     
     return render_template('add_project.html')
+
+@app.route('/project/<int:project_id>')
+def project_details(project_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    project = Project.query.get_or_404(project_id)
+    tasks = Task.query.filter_by(project_id=project_id).all()
+    purchase_requests = PurchaseRequest.query.filter_by(project_id=project_id).all()
+    invoices = Invoice.query.filter_by(project_id=project_id).all()
+    comments = Comment.query.filter_by(project_id=project_id).order_by(Comment.created_at.desc()).all()
+    
+    # Get users for tasks
+    users = User.query.filter_by(is_active=True).all()
+    
+    # Get comment users
+    comment_users = {}
+    for comment in comments:
+        user = User.query.get(comment.user_id)
+        if user:
+            comment_users[comment.id] = user
+    
+    return render_template('project_details.html', 
+                         project=project,
+                         tasks=tasks,
+                         purchase_requests=purchase_requests,
+                         invoices=invoices,
+                         comments=comments,
+                         comment_users=comment_users,
+                         users=users)
+
+@app.route('/project/<int:project_id>/update_progress', methods=['POST'])
+def update_progress(project_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    project = Project.query.get_or_404(project_id)
+    progress = int(request.form.get('progress', 0))
+    project.progress_percent = progress
+    db.session.commit()
+    flash(f'تم تحديث نسبة الإنجاز إلى {progress}%', 'success')
+    return redirect(url_for('project_details', project_id=project_id))
 
 @app.route('/project/<int:project_id>/approve')
 def approve_project(project_id):
@@ -241,6 +302,63 @@ def update_project_status(project_id, status):
     flash(f'تم تحديث حالة المشروع إلى: {status_names[status]}', 'success')
     return redirect(url_for('dashboard'))
 
+# Tasks Routes
+@app.route('/project/<int:project_id>/task/add', methods=['POST'])
+def add_task(project_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    task = Task(
+        project_id=project_id,
+        name=request.form.get('name'),
+        description=request.form.get('description'),
+        assigned_to=int(request.form.get('assigned_to')) if request.form.get('assigned_to') else None,
+        start_date=datetime.strptime(request.form.get('start_date'), '%Y-%m-%d').date() if request.form.get('start_date') else None,
+        end_date=datetime.strptime(request.form.get('end_date'), '%Y-%m-%d').date() if request.form.get('end_date') else None,
+        status='not_started'
+    )
+    db.session.add(task)
+    db.session.commit()
+    flash('تم إضافة المهمة بنجاح!', 'success')
+    return redirect(url_for('project_details', project_id=project_id))
+
+@app.route('/task/<int:task_id>/status/<status>')
+def update_task_status(task_id, status):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    task = Task.query.get_or_404(task_id)
+    task.status = status
+    
+    if status == 'done':
+        task.progress_percent = 100
+    elif status == 'in_progress' and task.progress_percent == 0:
+        task.progress_percent = 50
+    
+    db.session.commit()
+    flash('تم تحديث حالة المهمة', 'success')
+    return redirect(url_for('project_details', project_id=task.project_id))
+
+# Comments Routes
+@app.route('/project/<int:project_id>/comment/add', methods=['POST'])
+def add_comment(project_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    comment_text = request.form.get('comment_text')
+    if comment_text:
+        comment = Comment(
+            project_id=project_id,
+            user_id=session.get('user_id'),
+            comment_text=comment_text
+        )
+        db.session.add(comment)
+        db.session.commit()
+        flash('تم إضافة التعليق بنجاح!', 'success')
+    
+    return redirect(url_for('project_details', project_id=project_id))
+
+# Purchase Routes
 @app.route('/purchase/add', methods=['GET', 'POST'])
 def add_purchase_request():
     if 'user_id' not in session:
@@ -254,6 +372,7 @@ def add_purchase_request():
         purchase = PurchaseRequest(
             project_id=int(request.form.get('project_id')),
             requested_by=session.get('user_id'),
+            supplier_id=int(request.form.get('supplier_id')) if request.form.get('supplier_id') else None,
             description=request.form.get('description'),
             estimated_cost=float(request.form.get('estimated_cost', 0)),
             status='pending'
@@ -264,7 +383,8 @@ def add_purchase_request():
         return redirect(url_for('dashboard'))
     
     projects = Project.query.filter(Project.status.in_(['approved', 'in_progress'])).all()
-    return render_template('add_purchase.html', projects=projects)
+    suppliers = Supplier.query.filter_by(is_active=True).all()
+    return render_template('add_purchase.html', projects=projects, suppliers=suppliers)
 
 @app.route('/purchase/<int:purchase_id>/approve')
 def approve_purchase(purchase_id):
@@ -290,6 +410,7 @@ def reject_purchase(purchase_id):
     flash('تم رفض طلب الشراء', 'error')
     return redirect(url_for('dashboard'))
 
+# Invoice Routes
 @app.route('/invoice/add', methods=['GET', 'POST'])
 def add_invoice():
     if 'user_id' not in session:
@@ -326,6 +447,84 @@ def mark_invoice_paid(invoice_id):
     db.session.commit()
     flash('تم تحديث حالة الفاتورة إلى: مدفوعة', 'success')
     return redirect(url_for('dashboard'))
+
+# Employees Routes (HR)
+@app.route('/employees')
+def employees():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if session.get('role') not in ['hr', 'master']:
+        flash('ليس لديك صلاحية لعرض الموظفين', 'error')
+        return redirect(url_for('dashboard'))
+    
+    employees = User.query.all()
+    return render_template('employees.html', employees=employees)
+
+@app.route('/employee/add', methods=['GET', 'POST'])
+def add_employee():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if session.get('role') not in ['hr', 'master']:
+        flash('ليس لديك صلاحية لإضافة موظفين', 'error')
+        return redirect(url_for('dashboard'))
+    
+    if request.method == 'POST':
+        employee = User(
+            username=request.form.get('username'),
+            password=generate_password_hash(request.form.get('password')),
+            role=request.form.get('role'),
+            department=request.form.get('department'),
+            full_name=request.form.get('full_name'),
+            email=request.form.get('email'),
+            phone=request.form.get('phone'),
+            is_active=True
+        )
+        db.session.add(employee)
+        db.session.commit()
+        flash('تم إضافة الموظف بنجاح!', 'success')
+        return redirect(url_for('employees'))
+    
+    return render_template('add_employee.html')
+
+# Suppliers Routes
+@app.route('/suppliers')
+def suppliers():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if session.get('role') not in ['procurement', 'master']:
+        flash('ليس لديك صلاحية لعرض الموردين', 'error')
+        return redirect(url_for('dashboard'))
+    
+    suppliers = Supplier.query.all()
+    return render_template('suppliers.html', suppliers=suppliers)
+
+@app.route('/supplier/add', methods=['GET', 'POST'])
+def add_supplier():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if session.get('role') not in ['procurement', 'master']:
+        flash('ليس لديك صلاحية لإضافة موردين', 'error')
+        return redirect(url_for('dashboard'))
+    
+    if request.method == 'POST':
+        supplier = Supplier(
+            name=request.form.get('name'),
+            contact_person=request.form.get('contact_person'),
+            email=request.form.get('email'),
+            phone=request.form.get('phone'),
+            address=request.form.get('address'),
+            is_active=True
+        )
+        db.session.add(supplier)
+        db.session.commit()
+        flash('تم إضافة المورد بنجاح!', 'success')
+        return redirect(url_for('suppliers'))
+    
+    return render_template('add_supplier.html')
 
 if __name__ == '__main__':
     init_db()
