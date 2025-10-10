@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - {{ session.department }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .stat-card {
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .stat-card.blue { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stat-card.orange { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .stat-card.green { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .stat-card.purple { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .project-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: all 0.3s;
+        }
+        .project-card:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .badge-status {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+        .btn-action {
+            margin: 2px;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">
+                🏢 نظام إدارة المشاريع - {{ session.department }}
+            </span>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">
+                    <i class="bi bi-person-circle"></i> {{ session.username }}
+                </span>
+                <a href="{{ url_for('logout') }}" class="btn btn-light btn-sm">تسجيل الخروج</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Statistics Cards -->
+        {% if session.role in ['master', 'management'] %}
+        <div class="row">
+            <div class="col-md-3">
+                <div class="stat-card blue">
+                    <h3>{{ stats.total }}</h3>
+                    <p class="mb-0">إجمالي المشاريع</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card orange">
+                    <h3>{{ stats.pending }}</h3>
+                    <p class="mb-0">في انتظار الاعتماد</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card green">
+                    <h3>{{ stats.in_progress }}</h3>
+                    <p class="mb-0">قيد التنفيذ</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card purple">
+                    <h3>{{ stats.completed }}</h3>
+                    <p class="mb-0">مكتملة</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Quick Actions -->
+        <div class="row mt-3 mb-4">
+            <div class="col-12">
+                {% if session.role in ['sales', 'master'] %}
+                <a href="{{ url_for('add_project') }}" class="btn btn-primary me-2">
+                    <i class="bi bi-plus-circle"></i> إضافة مشروع جديد
+                </a>
+                {% endif %}
+                {% if session.role in ['operations', 'master', 'projects'] %}
+                <a href="{{ url_for('add_purchase_request') }}" class="btn btn-warning me-2">
+                    <i class="bi bi-cart-plus"></i> إضافة طلب شراء
+                </a>
+                {% endif %}
+                {% if session.role in ['finance', 'master'] %}
+                <a href="{{ url_for('add_invoice') }}" class="btn btn-success me-2">
+                    <i class="bi bi-receipt"></i> إضافة فاتورة
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Projects Section -->
+        <div class="row">
+            <div class="col-12">
+                <h4 class="mb-3">📋 المشاريع</h4>
+                {% if projects %}
+                    {% for project in projects %}
+                    <div class="project-card">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <h5>{{ project.name }}</h5>
+                                <p class="text-muted mb-1">
+                                    <strong>كود المشروع:</strong> {{ project.project_code }} | 
+                                    <strong>العميل:</strong> {{ project.client_name }}
+                                </p>
+                                <p class="mb-0"><strong>التكلفة:</strong> {{ "{:,.2f}".format(project.estimated_cost) }} ريال</p>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                {% if project.status == 'pending_approval' %}
+                                    <span class="badge bg-warning badge-status">في انتظار الاعتماد</span>
+                                {% elif project.status == 'approved' %}
+                                    <span class="badge bg-info badge-status">معتمد</span>
+                                {% elif project.status == 'in_progress' %}
+                                    <span class="badge bg-primary badge-status">قيد التنفيذ</span>
+                                {% elif project.status == 'on_hold' %}
+                                    <span class="badge bg-secondary badge-status">متوقف</span>
+                                {% elif project.status == 'completed' %}
+                                    <span class="badge bg-success badge-status">مكتمل</span>
+                                {% elif project.status == 'rejected' %}
+                                    <span class="badge bg-danger badge-status">مرفوض</span>
+                                {% elif project.status == 'cancelled' %}
+                                    <span class="badge bg-dark badge-status">ملغي</span>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-3 text-end">
+                                {% if session.role in ['management', 'master'] and project.status == 'pending_approval' %}
+                                    <a href="{{ url_for('approve_project', project_id=project.id) }}" class="btn btn-success btn-sm btn-action">
+                                        <i class="bi bi-check-circle"></i> اعتماد
+                                    </a>
+                                    <a href="{{ url_for('reject_project', project_id=project.id) }}" class="btn btn-danger btn-sm btn-action">
+                                        <i class="bi bi-x-circle"></i> رفض
+                                    </a>
+                                {% endif %}
+                                
+                                {% if session.role in ['projects', 'master'] and project.status in ['approved', 'in_progress', 'on_hold'] %}
+                                    {% if project.status != 'in_progress' %}
+                                    <a href="{{ url_for('update_project_status', project_id=project.id, status='in_progress') }}" class="btn btn-primary btn-sm btn-action">
+                                        <i class="bi bi-play-circle"></i> بدء
+                                    </a>
+                                    {% endif %}
+                                    {% if project.status != 'on_hold' %}
+                                    <a href="{{ url_for('update_project_status', project_id=project.id, status='on_hold') }}" class="btn btn-warning btn-sm btn-action">
+                                        <i class="bi bi-pause-circle"></i> توقف
+                                    </a>
+                                    {% endif %}
+                                    <a href="{{ url_for('update_project_status', project_id=project.id, status='completed') }}" class="btn btn-success btn-sm btn-action">
+                                        <i class="bi bi-check-circle"></i> إكمال
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="alert alert-info">لا توجد مشاريع حالياً</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Purchase Requests Section -->
+        {% if purchase_requests %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <h4 class="mb-3">🛒 طلبات الشراء</h4>
+                {% for purchase in purchase_requests %}
+                <div class="project-card">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h6>{{ purchase.description }}</h6>
+                            <p class="mb-0"><strong>التكلفة:</strong> {{ "{:,.2f}".format(purchase.estimated_cost) }} ريال</p>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            {% if purchase.status == 'pending' %}
+                                <span class="badge bg-warning badge-status">قيد المراجعة</span>
+                            {% elif purchase.status == 'approved' %}
+                                <span class="badge bg-success badge-status">معتمد</span>
+                            {% elif purchase.status == 'rejected' %}
+                                <span class="badge bg-danger badge-status">مرفوض</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3 text-end">
+                            {% if session.role in ['procurement', 'master'] and purchase.status == 'pending' %}
+                                <a href="{{ url_for('approve_purchase', purchase_id=purchase.id) }}" class="btn btn-success btn-sm btn-action">اعتماد</a>
+                                <a href="{{ url_for('reject_purchase', purchase_id=purchase.id) }}" class="btn btn-danger btn-sm btn-action">رفض</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Invoices Section -->
+        {% if invoices %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <h4 class="mb-3">💰 الفواتير</h4>
+                {% for invoice in invoices %}
+                <div class="project-card">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h6>فاتورة {{ 'عميل' if invoice.invoice_type == 'client' else 'مورد' }}</h6>
+                            <p class="mb-0"><strong>المبلغ:</strong> {{ "{:,.2f}".format(invoice.amount) }} ريال</p>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            {% if invoice.payment_status == 'pending' %}
+                                <span class="badge bg-warning badge-status">غير مدفوعة</span>
+                            {% elif invoice.payment_status == 'paid' %}
+                                <span class="badge bg-success badge-status">مدفوعة</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3 text-end">
+                            {% if session.role in ['finance', 'master'] and invoice.payment_status == 'pending' %}
+                                <a href="{{ url_for('mark_invoice_paid', invoice_id=invoice.id) }}" class="btn btn-success btn-sm btn-action">
+                                    تعيين كمدفوعة
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
