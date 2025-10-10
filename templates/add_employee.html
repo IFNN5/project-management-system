@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إضافة موظف</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .form-container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid">
+            <a href="{{ url_for('employees') }}" class="navbar-brand">
+                <i class="bi bi-arrow-right"></i> العودة لقائمة الموظفين
+            </a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="form-container">
+            <h3 class="mb-4">➕ إضافة موظف جديد</h3>
+            
+            <form method="POST" action="{{ url_for('add_employee') }}">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">الاسم الكامل *</label>
+                        <input type="text" class="form-control" name="full_name" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">اسم المستخدم *</label>
+                        <input type="text" class="form-control" name="username" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">كلمة المرور *</label>
+                        <input type="password" class="form-control" name="password" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">البريد الإلكتروني</label>
+                        <input type="email" class="form-control" name="email">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">رقم الجوال</label>
+                        <input type="text" class="form-control" name="phone">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">القسم *</label>
+                        <input type="text" class="form-control" name="department" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">الدور *</label>
+                        <select class="form-select" name="role" required>
+                            <option value="">اختر الدور</option>
+                            <option value="sales">مبيعات</option>
+                            <option value="management">إدارة عليا</option>
+                            <option value="projects">إدارة مشاريع</option>
+                            <option value="operations">تشغيل</option>
+                            <option value="procurement">مشتريات</option>
+                            <option value="finance">مالية</option>
+                            <option value="hr">موارد بشرية</option>
+                            <option value="employee">موظف عادي</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">حفظ الموظف</button>
+                    <a href="{{ url_for('employees') }}" class="btn btn-secondary">إلغاء</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
