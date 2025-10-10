@@ -47,6 +47,16 @@
                 </div>
 
                 <div class="mb-3">
+                    <label class="form-label">المورد (اختياري)</label>
+                    <select class="form-select" name="supplier_id">
+                        <option value="">-- اختر مورد --</option>
+                        {% for supplier in suppliers %}
+                        <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
                     <label class="form-label">وصف المواد/الخدمات المطلوبة *</label>
                     <textarea class="form-control" name="description" rows="4" required></textarea>
                 </div>
