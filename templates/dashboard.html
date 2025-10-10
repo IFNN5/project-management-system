@@ -110,18 +110,28 @@
         <div class="row mt-3 mb-4">
             <div class="col-12">
                 {% if session.role in ['sales', 'master'] %}
-                <a href="{{ url_for('add_project') }}" class="btn btn-primary me-2">
+                <a href="{{ url_for('add_project') }}" class="btn btn-primary me-2 mb-2">
                     <i class="bi bi-plus-circle"></i> إضافة مشروع جديد
                 </a>
                 {% endif %}
                 {% if session.role in ['operations', 'master', 'projects'] %}
-                <a href="{{ url_for('add_purchase_request') }}" class="btn btn-warning me-2">
+                <a href="{{ url_for('add_purchase_request') }}" class="btn btn-warning me-2 mb-2">
                     <i class="bi bi-cart-plus"></i> إضافة طلب شراء
                 </a>
                 {% endif %}
                 {% if session.role in ['finance', 'master'] %}
-                <a href="{{ url_for('add_invoice') }}" class="btn btn-success me-2">
+                <a href="{{ url_for('add_invoice') }}" class="btn btn-success me-2 mb-2">
                     <i class="bi bi-receipt"></i> إضافة فاتورة
+                </a>
+                {% endif %}
+                {% if session.role in ['hr', 'master'] %}
+                <a href="{{ url_for('employees') }}" class="btn btn-info me-2 mb-2">
+                    <i class="bi bi-people"></i> إدارة الموظفين
+                </a>
+                {% endif %}
+                {% if session.role in ['procurement', 'master'] %}
+                <a href="{{ url_for('suppliers') }}" class="btn btn-secondary me-2 mb-2">
+                    <i class="bi bi-shop"></i> إدارة الموردين
                 </a>
                 {% endif %}
             </div>
@@ -135,15 +145,26 @@
                     {% for project in projects %}
                     <div class="project-card">
                         <div class="row align-items-center">
-                            <div class="col-md-6">
-                                <h5>{{ project.name }}</h5>
+                            <div class="col-md-5">
+                                <h5>
+                                    <a href="{{ url_for('project_details', project_id=project.id) }}" style="text-decoration: none; color: inherit;">
+                                        {{ project.name }}
+                                    </a>
+                                </h5>
                                 <p class="text-muted mb-1">
                                     <strong>كود المشروع:</strong> {{ project.project_code }} | 
                                     <strong>العميل:</strong> {{ project.client_name }}
                                 </p>
                                 <p class="mb-0"><strong>التكلفة:</strong> {{ "{:,.2f}".format(project.estimated_cost) }} ريال</p>
+                                
+                                <!-- Progress Bar -->
+                                <div class="progress mt-2" style="height: 20px;">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ project.progress_percent }}%">
+                                        {{ project.progress_percent }}%
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-3 text-center">
+                            <div class="col-md-2 text-center">
                                 {% if project.status == 'pending_approval' %}
                                     <span class="badge bg-warning badge-status">في انتظار الاعتماد</span>
                                 {% elif project.status == 'approved' %}
@@ -160,28 +181,32 @@
                                     <span class="badge bg-dark badge-status">ملغي</span>
                                 {% endif %}
                             </div>
-                            <div class="col-md-3 text-end">
+                            <div class="col-md-5 text-end">
+                                <a href="{{ url_for('project_details', project_id=project.id) }}" class="btn btn-outline-primary btn-sm btn-action mb-1">
+                                    <i class="bi bi-eye"></i> عرض التفاصيل
+                                </a>
+                                
                                 {% if session.role in ['management', 'master'] and project.status == 'pending_approval' %}
-                                    <a href="{{ url_for('approve_project', project_id=project.id) }}" class="btn btn-success btn-sm btn-action">
+                                    <a href="{{ url_for('approve_project', project_id=project.id) }}" class="btn btn-success btn-sm btn-action mb-1">
                                         <i class="bi bi-check-circle"></i> اعتماد
                                     </a>
-                                    <a href="{{ url_for('reject_project', project_id=project.id) }}" class="btn btn-danger btn-sm btn-action">
+                                    <a href="{{ url_for('reject_project', project_id=project.id) }}" class="btn btn-danger btn-sm btn-action mb-1">
                                         <i class="bi bi-x-circle"></i> رفض
                                     </a>
                                 {% endif %}
                                 
                                 {% if session.role in ['projects', 'master'] and project.status in ['approved', 'in_progress', 'on_hold'] %}
                                     {% if project.status != 'in_progress' %}
-                                    <a href="{{ url_for('update_project_status', project_id=project.id, status='in_progress') }}" class="btn btn-primary btn-sm btn-action">
+                                    <a href="{{ url_for('update_project_status', project_id=project.id, status='in_progress') }}" class="btn btn-primary btn-sm btn-action mb-1">
                                         <i class="bi bi-play-circle"></i> بدء
                                     </a>
                                     {% endif %}
                                     {% if project.status != 'on_hold' %}
-                                    <a href="{{ url_for('update_project_status', project_id=project.id, status='on_hold') }}" class="btn btn-warning btn-sm btn-action">
+                                    <a href="{{ url_for('update_project_status', project_id=project.id, status='on_hold') }}" class="btn btn-warning btn-sm btn-action mb-1">
                                         <i class="bi bi-pause-circle"></i> توقف
                                     </a>
                                     {% endif %}
-                                    <a href="{{ url_for('update_project_status', project_id=project.id, status='completed') }}" class="btn btn-success btn-sm btn-action">
+                                    <a href="{{ url_for('update_project_status', project_id=project.id, status='completed') }}" class="btn btn-success btn-sm btn-action mb-1">
                                         <i class="bi bi-check-circle"></i> إكمال
                                     </a>
                                 {% endif %}
