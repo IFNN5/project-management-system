@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تفاصيل المشروع - {{ project.name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .project-header {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .section-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .progress {
+            height: 30px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .task-item, .comment-item {
+            border-bottom: 1px solid #eee;
+            padding: 15px 0;
+        }
+        .task-item:last-child, .comment-item:last-child {
+            border-bottom: none;
+        }
+        .badge-task {
+            padding: 5px 10px;
+            border-radius: 15px;
+        }
+        .comment-box {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        .comment-meta {
+            font-size: 0.85rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark">
+        <div class="container-fluid">
+            <a href="{{ url_for('dashboard') }}" class="navbar-brand">
+                <i class="bi bi-arrow-right"></i> العودة للوحة التحكم
+            </a>
+            <span class="text-white">
+                <i class="bi bi-person-circle"></i> {{ session.username }}
+            </span>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Project Header -->
+        <div class="project-header">
+            <div class="row">
+                <div class="col-md-8">
+                    <h2>{{ project.name }}</h2>
+                    <p class="text-muted mb-2">
+                        <strong>كود المشروع:</strong> {{ project.project_code }} | 
+                        <strong>العميل:</strong> {{ project.client_name }}
+                    </p>
+                    <p><strong>الوصف:</strong> {{ project.description or 'لا يوجد وصف' }}</p>
+                    <p class="mb-0">
+                        <strong>التكلفة:</strong> {{ "{:,.2f}".format(project.estimated_cost) }} ريال | 
+                        <strong>من:</strong> {{ project.start_date.strftime('%Y-%m-%d') if project.start_date else 'غير محدد' }} | 
+                        <strong>إلى:</strong> {{ project.end_date.strftime('%Y-%m-%d') if project.end_date else 'غير محدد' }}
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    {% if project.status == 'pending_approval' %}
+                        <span class="badge bg-warning fs-5">في انتظار الاعتماد</span>
+                    {% elif project.status == 'approved' %}
+                        <span class="badge bg-info fs-5">معتمد</span>
+                    {% elif project.status == 'in_progress' %}
+                        <span class="badge bg-primary fs-5">قيد التنفيذ</span>
+                    {% elif project.status == 'on_hold' %}
+                        <span class="badge bg-secondary fs-5">متوقف</span>
+                    {% elif project.status == 'completed' %}
+                        <span class="badge bg-success fs-5">مكتمل</span>
+                    {% elif project.status == 'rejected' %}
+                        <span class="badge bg-danger fs-5">مرفوض</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <label class="form-label"><strong>نسبة الإنجاز:</strong></label>
+                    <div class="progress">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ project.progress_percent }}%">
+                            {{ project.progress_percent }}%
+                        </div>
+                    </div>
+                    
+                    {% if session.role in ['projects', 'master'] %}
+                    <form method="POST" action="{{ url_for('update_progress', project_id=project.id) }}" class="mt-3">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <input type="number" class="form-control" name="progress" min="0" max="100" value="{{ project.progress_percent }}" required>
+                            </div>
+                            <div class="col-md-3">
+                                <button type="submit" class="btn btn-primary">تحديث النسبة</button>
+                            </div>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tasks Section -->
+        <div class="section-card">
+            <h4 class="mb-3"><i class="bi bi-list-task"></i> المهام</h4>
+            
+            {% if session.role in ['projects', 'master'] %}
+            <button class="btn btn-primary btn-sm mb-3" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+                <i class="bi bi-plus-circle"></i> إضافة مهمة
+            </button>
+            {% endif %}
+
+            {% if tasks %}
+                {% for task in tasks %}
+                <div class="task-item">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h6>{{ task.name }}</h6>
+                            <p class="text-muted mb-1">{{ task.description or 'لا يوجد وصف' }}</p>
+                            <small class="text-muted">
+                                {% if task.assigned_to %}
+                                    {% set assigned_user = users|selectattr('id', 'equalto', task.assigned_to)|first %}
+                                    <i class="bi bi-person"></i> {{ assigned_user.full_name if assigned_user else 'غير معروف' }}
+                                {% endif %}
+                            </small>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            {% if task.status == 'not_started' %}
+                                <span class="badge bg-secondary badge-task">لم تبدأ</span>
+                            {% elif task.status == 'in_progress' %}
+                                <span class="badge bg-primary badge-task">قيد التنفيذ</span>
+                            {% elif task.status == 'done' %}
+                                <span class="badge bg-success badge-task">مكتملة</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3 text-end">
+                            {% if session.role in ['projects', 'master', 'operations'] %}
+                                {% if task.status != 'in_progress' %}
+                                <a href="{{ url_for('update_task_status', task_id=task.id, status='in_progress') }}" class="btn btn-sm btn-primary">بدء</a>
+                                {% endif %}
+                                {% if task.status != 'done' %}
+                                <a href="{{ url_for('update_task_status', task_id=task.id, status='done') }}" class="btn btn-sm btn-success">إكمال</a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">لا توجد مهام</p>
+            {% endif %}
+        </div>
+
+        <!-- Purchase Requests Section -->
+        <div class="section-card">
+            <h4 class="mb-3"><i class="bi bi-cart"></i> طلبات الشراء</h4>
+            {% if purchase_requests %}
+                {% for purchase in purchase_requests %}
+                <div class="task-item">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h6>{{ purchase.description }}</h6>
+                            <p class="mb-0"><strong>التكلفة:</strong> {{ "{:,.2f}".format(purchase.estimated_cost) }} ريال</p>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            {% if purchase.status == 'pending' %}
+                                <span class="badge bg-warning">قيد المراجعة</span>
+                            {% elif purchase.status == 'approved' %}
+                                <span class="badge bg-success">معتمد</span>
+                            {% elif purchase.status == 'rejected' %}
+                                <span class="badge bg-danger">مرفوض</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">{{ purchase.created_at.strftime('%Y-%m-%d') }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">لا توجد طلبات شراء</p>
+            {% endif %}
+        </div>
+
+        <!-- Invoices Section -->
+        <div class="section-card">
+            <h4 class="mb-3"><i class="bi bi-receipt"></i> الفواتير</h4>
+            {% if invoices %}
+                {% for invoice in invoices %}
+                <div class="task-item">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h6>فاتورة {{ 'عميل' if invoice.invoice_type == 'client' else 'مورد' }}</h6>
+                            <p class="mb-0"><strong>المبلغ:</strong> {{ "{:,.2f}".format(invoice.amount) }} ريال</p>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            {% if invoice.payment_status == 'pending' %}
+                                <span class="badge bg-warning">غير مدفوعة</span>
+                            {% elif invoice.payment_status == 'paid' %}
+                                <span class="badge bg-success">مدفوعة</span>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">{{ invoice.created_at.strftime('%Y-%m-%d') }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">لا توجد فواتير</p>
+            {% endif %}
+        </div>
+
+        <!-- Comments Section -->
+        <div class="section-card">
+            <h4 class="mb-3"><i class="bi bi-chat-left-text"></i> التعليقات</h4>
+            
+            <!-- Add Comment Form -->
+            <form method="POST" action="{{ url_for('add_comment', project_id=project.id) }}" class="mb-4">
+                <div class="mb-3">
+                    <textarea class="form-control" name="comment_text" rows="3" placeholder="أضف تعليقك هنا..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-send"></i> إضافة تعليق
+                </button>
+            </form>
+
+            <!-- Comments List -->
+            {% if comments %}
+                {% for comment in comments %}
+                <div class="comment-box">
+                    <div class="d-flex justify-content-between">
+                        <strong>
+                            <i class="bi bi-person-circle"></i> 
+                            {{ comment_users[comment.id].full_name if comment.id in comment_users else 'مستخدم' }}
+                        </strong>
+                        <span class="comment-meta">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </div>
+                    <p class="mt-2 mb-0">{{ comment.comment_text }}</p>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">لا توجد تعليقات</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Add Task Modal -->
+    <div class="modal fade" id="addTaskModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">إضافة مهمة جديدة</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('add_task', project_id=project.id) }}">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">اسم المهمة *</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">الوصف</label>
+                            <textarea class="form-control" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">تعيين لـ</label>
+                            <select class="form-select" name="assigned_to">
+                                <option value="">-- اختر موظف --</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.full_name }} - {{ user.department }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">تاريخ البدء</label>
+                                <input type="date" class="form-control" name="start_date">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">تاريخ الانتهاء</label>
+                                <input type="date" class="form-control" name="end_date">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                        <button type="submit" class="btn btn-primary">حفظ المهمة</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
