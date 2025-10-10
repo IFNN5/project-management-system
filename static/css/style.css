@@ -1,0 +1,476 @@
+/* ============================================
+   نظام إدارة المشاريع - ملف التنسيق الرئيسي
+   ============================================ */
+
+/* ====== اختر الثيم من هنا ====== */
+/* انسخ الألوان اللي تبيها وحطها في :root */
+
+/* الثيم 1: أزرق بنفسجي (الافتراضي) */
+:root {
+    --primary-color: #667eea;
+    --primary-dark: #764ba2;
+    --secondary-color: #f093fb;
+    --secondary-dark: #f5576c;
+    --success-color: #43e97b;
+    --success-dark: #38f9d7;
+    --warning-color: #fa709a;
+    --warning-dark: #fee140;
+    --background-color: #f4f6f9;
+    --card-background: #ffffff;
+    --text-primary: #2d3748;
+    --text-secondary: #718096;
+    --border-color: #e2e8f0;
+    --shadow-light: 0 2px 10px rgba(0,0,0,0.05);
+    --shadow-medium: 0 4px 20px rgba(0,0,0,0.1);
+    --shadow-heavy: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+/* الثيم 2: أخضر نعناعي (حط الأسطر دي بدل اللي فوق)
+:root {
+    --primary-color: #11998e;
+    --primary-dark: #38ef7d;
+    --secondary-color: #4facfe;
+    --secondary-dark: #00f2fe;
+    --success-color: #56ab2f;
+    --success-dark: #a8e063;
+    --warning-color: #f2994a;
+    --warning-dark: #f2c94c;
+    --background-color: #f0f9ff;
+    --card-background: #ffffff;
+    --text-primary: #1a202c;
+    --text-secondary: #4a5568;
+    --border-color: #cbd5e0;
+    --shadow-light: 0 2px 10px rgba(0,0,0,0.05);
+    --shadow-medium: 0 4px 20px rgba(0,0,0,0.1);
+    --shadow-heavy: 0 10px 40px rgba(0,0,0,0.2);
+}
+*/
+
+/* الثيم 3: برتقالي وردي (حط الأسطر دي بدل اللي فوق)
+:root {
+    --primary-color: #ee0979;
+    --primary-dark: #ff6a00;
+    --secondary-color: #fc4a1a;
+    --secondary-dark: #f7b733;
+    --success-color: #42e695;
+    --success-dark: #3bb2b8;
+    --warning-color: #fa8231;
+    --warning-dark: #ffc837;
+    --background-color: #fff5f5;
+    --card-background: #ffffff;
+    --text-primary: #2d3748;
+    --text-secondary: #718096;
+    --border-color: #fed7d7;
+    --shadow-light: 0 2px 10px rgba(0,0,0,0.05);
+    --shadow-medium: 0 4px 20px rgba(0,0,0,0.1);
+    --shadow-heavy: 0 10px 40px rgba(0,0,0,0.2);
+}
+*/
+
+/* ====== الخطوط ====== */
+* {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* ====== الخلفية العامة ====== */
+body {
+    background-color: var(--background-color);
+    background-image: 
+        radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.05) 0%, transparent 50%);
+    background-attachment: fixed;
+    color: var(--text-primary);
+    min-height: 100vh;
+}
+
+/* ====== النافبار ====== */
+.navbar {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    box-shadow: var(--shadow-medium);
+    padding: 1rem 0;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+/* ====== الكروت والبطاقات ====== */
+.project-card, .employee-card, .supplier-card, .section-card, .project-header {
+    background: var(--card-background);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-light);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.project-card::before, .employee-card::before, .supplier-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+}
+
+.project-card:hover, .employee-card:hover, .supplier-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-medium);
+}
+
+/* ====== بطاقات الإحصائيات ====== */
+.stat-card {
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+    color: white;
+    box-shadow: var(--shadow-medium);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.stat-card::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px) scale(1.02);
+}
+
+.stat-card.blue { 
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%); 
+}
+.stat-card.orange { 
+    background: linear-gradient(135deg, var(--secondary-color) 0%, var(--secondary-dark) 100%); 
+}
+.stat-card.green { 
+    background: linear-gradient(135deg, var(--success-color) 0%, var(--success-dark) 100%); 
+}
+.stat-card.purple { 
+    background: linear-gradient(135deg, var(--warning-color) 0%, var(--warning-dark) 100%); 
+}
+
+.stat-card h3 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+/* ====== الأزرار ====== */
+.btn {
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-light);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-color) 100%);
+}
+
+.btn-action {
+    margin: 3px;
+    font-size: 0.85rem;
+    padding: 6px 12px;
+}
+
+/* ====== شريط التقدم ====== */
+.progress {
+    height: 25px;
+    border-radius: 12px;
+    background-color: #e9ecef;
+    overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, var(--success-color) 0%, var(--success-dark) 100%);
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: width 0.6s ease;
+}
+
+/* ====== الشارات (Badges) ====== */
+.badge-status, .badge-task {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* ====== صفحة تسجيل الدخول ====== */
+.login-card {
+    background: var(--card-background);
+    border-radius: 20px;
+    box-shadow: var(--shadow-heavy);
+    padding: 40px;
+    max-width: 450px;
+    margin: 0 auto;
+    border: 1px solid var(--border-color);
+}
+
+.login-header h2 {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: bold;
+}
+
+.btn-login {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border: none;
+    padding: 14px;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.users-info {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 20px;
+    font-size: 0.85rem;
+    border: 1px solid var(--border-color);
+}
+
+.users-info h6 {
+    color: var(--primary-color);
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+/* ====== الفورم ====== */
+.form-container {
+    background: var(--card-background);
+    border-radius: 15px;
+    padding: 35px;
+    box-shadow: var(--shadow-light);
+    margin-top: 30px;
+    border: 1px solid var(--border-color);
+}
+
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 2px solid var(--border-color);
+    padding: 10px 15px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+/* ====== التعليقات ====== */
+.comment-box {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 15px;
+    border-left: 4px solid var(--primary-color);
+    transition: all 0.3s ease;
+}
+
+.comment-box:hover {
+    transform: translateX(-5px);
+    box-shadow: var(--shadow-light);
+}
+
+.comment-meta {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* ====== المهام والعناصر ====== */
+.task-item, .comment-item {
+    border-bottom: 2px solid var(--border-color);
+    padding: 18px 0;
+    transition: all 0.3s ease;
+}
+
+.task-item:hover {
+    background-color: rgba(102, 126, 234, 0.02);
+    padding-left: 10px;
+    border-radius: 8px;
+}
+
+.task-item:last-child, .comment-item:last-child {
+    border-bottom: none;
+}
+
+/* ====== التنبيهات ====== */
+.alert {
+    border-radius: 10px;
+    border: none;
+    box-shadow: var(--shadow-light);
+    border-left: 4px solid;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, rgba(67, 233, 123, 0.1) 0%, rgba(56, 249, 215, 0.1) 100%);
+    border-left-color: var(--success-color);
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, rgba(245, 87, 108, 0.1) 0%, rgba(240, 147, 251, 0.1) 100%);
+    border-left-color: #f5576c;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-left-color: var(--primary-color);
+}
+
+/* ====== Modal ====== */
+.modal-content {
+    border-radius: 15px;
+    border: none;
+    box-shadow: var(--shadow-heavy);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    color: white;
+    border-radius: 15px 15px 0 0;
+    border: none;
+}
+
+/* ====== تحسينات عامة ====== */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.text-muted {
+    color: var(--text-secondary) !important;
+}
+
+a {
+    text-decoration: none;
+    color: var(--primary-color);
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: var(--primary-dark);
+}
+
+/* ====== Scrollbar تخصيص ====== */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--background-color);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-dark);
+}
+
+/* ====== رسومات خلفية للصفحات ====== */
+.project-header::after {
+    content: '';
+    position: absolute;
+    top: -20px;
+    right: -20px;
+    width: 150px;
+    height: 150px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    opacity: 0.05;
+    border-radius: 50%;
+    z-index: 0;
+}
+
+.section-card h4 {
+    position: relative;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-card h4::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border-radius: 2px;
+}
+
+/* ====== Animation للتحميل ====== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.project-card, .employee-card, .supplier-card {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* ====== Responsive ====== */
+@media (max-width: 768px) {
+    .stat-card h3 {
+        font-size: 2rem;
+    }
+    
+    .project-card, .employee-card, .supplier-card {
+        padding: 15px;
+    }
+    
+    .btn-action {
+        font-size: 0.75rem;
+        padding: 4px 8px;
+        margin: 2px;
+    }
+}
